@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dr. Ahmed El Sharif — Patient Record</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #e8e8e8; font-family: Arial, 'Times New Roman', serif; }
+
+/* ===== TOOLBAR ===== */
+.toolbar { background: #8B0000; color: white; padding: 10px 20px; display: flex; align-items: center; gap: 12px; justify-content: space-between; position: sticky; top: 0; z-index: 100; print-color-adjust: exact; }
+.toolbar-left { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.toolbar button { background: white; color: #8B0000; border: none; border-radius: 5px; padding: 7px 14px; font-size: 13px; font-weight: bold; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 4px; }
+.toolbar button:hover { background: #f0e0e0; }
+.toolbar span { font-size: 13px; opacity: 0.9; }
+
+/* منطقة إرسال البيانات للدكتور */
+.doctor-zone { display: flex; align-items: center; gap: 5px; background: #25D366; padding: 5px 10px; border-radius: 5px; }
+.doctor-zone button { background: white; color: #128C7E; border: none; padding: 4px 10px; font-size: 12px; font-weight: bold; cursor: pointer; border-radius: 3px; }
+.doctor-zone button:hover { background: #e8f5e9; }
+
+/* ===== PAPER ===== */
+.paper { width: 210mm; min-height: 297mm; background: white; margin: 20px auto; padding: 15mm 14mm 14mm; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+
+/* ===== HEADER ===== */
+.page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.clinic-name { font-family: 'Times New Roman', serif; font-size: 36px; color: #cc0000; font-style: italic; font-weight: bold; line-height: 1; }
+.clinic-sub { font-size: 10px; color: #333; line-height: 1.7; margin-top: 4px; }
+.logo-circle { width: 72px; height: 72px; border-radius: 50%; border: 3px solid #8B0000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 6px; }
+.logo-circle .logo-name { font-size: 6px; font-weight: bold; color: #8B0000; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.4; }
+.logo-circle .logo-tooth { font-size: 22px; margin: 2px 0; }
+.logo-circle .logo-bottom { font-size: 6px; color: #8B0000; font-weight: bold; text-transform: uppercase; letter-spacing: 0.3px; }
+
+/* ===== PATIENT INFO ===== */
+.info-input { flex: 1; border: none; outline: none; border-bottom: 1px solid #ddd; background: transparent; font-size: 14px; font-family: inherit; padding: 4px 5px; min-width: 40px; line-height: 1.2; }
+.info-input:focus { border-bottom-color: #8B0000; background: #fffaf8; }
+
+/* ===== MEDICAL HISTORY + GENDER BOX ===== */
+.history-section { flex: 1; }
+.history-line { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; font-size: 12px; }
+.history-line-input { flex: 1; border: none; outline: none; border-bottom: 1px solid #ddd; background: transparent; font-size: 14px; font-family: inherit; padding: 4px 5px; line-height: 1.2; }
+.history-line-input:focus { border-bottom-color: #8B0000; background: #fffaf8; }
+
+.history-gender { display: flex; gap: 10px; margin-bottom: 6px; }
+.gender-box { border: 1px solid #555; padding: 6px 8px; font-size: 10px; min-width: 140px; direction: rtl; }
+.gender-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; gap: 6px; }
+.gender-row-label { font-size: 10px; white-space: nowrap; }
+.gender-check { width: 14px; height: 14px; accent-color: #8B0000; cursor: pointer; }
+.gender-divider { border-top: 1px solid #aaa; margin: 4px 0; }
+
+/* ===== DISEASES ===== */
+.diseases-row { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-top: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.disease-item { display: flex; align-items: center; gap: 3px; }
+.disease-item input[type=checkbox] { accent-color: #8B0000; width: 13px; height: 13px; cursor: pointer; }
+
+/* ===== DENTAL CHART ===== */
+.chart-title { font-size: 14px; font-weight: bold; text-align: center; text-decoration: underline; margin-bottom: 6px; letter-spacing: 1px; }
+.chart-container { border: 1px solid #ccc; padding: 8px 4px; margin-bottom: 6px; background: #fff; }
+.jaw-label-side { font-size: 10px; writing-mode: vertical-rl; text-orientation: mixed; color: #333; transform: rotate(180deg); margin-left: 2px; font-weight: bold; text-align: center;}
+.jaw-row { display: flex; align-items: center; gap: 2px; margin-bottom: 4px; }
+.jaw-row-label { font-size: 9px; min-width: 42px; color: #444; font-style: italic; font-weight: bold; }
+.tooth-wrap { display: flex; align-items: center; justify-content: space-between; flex: 1; }
+
+/* TOOTH COMPONENT */
+.tooth-box { display: flex; flex-direction: column; align-items: center; gap: 1px; flex: 1; min-width: 22px; cursor: pointer; }
+.tooth-svg-container { width: 100%; height: 42px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+.tooth-svg-container svg { width: 100%; height: 100%; max-width: 30px; }
+.tooth-svg-container path, .tooth-svg-container polygon, .tooth-svg-container circle { fill: #ffffff; stroke: #222222; stroke-width: 1.2; transition: fill 0.2s; }
+.tooth-box .t-num { font-size: 8px; font-weight: bold; color: #333; margin-top: 1px; text-align: center; width: 100%; display: block;}
+
+/* Dental Status Colors */
+.tooth-box.caries path, .tooth-box.caries polygon, .tooth-box.caries circle { fill: #ffe0d0; stroke: #cc3300; }
+.tooth-box.filled path, .tooth-box.filled polygon, .tooth-box.filled circle { fill: #d0e8ff; stroke: #0055aa; }
+.tooth-box.crown path, .tooth-box.crown polygon, .tooth-box.crown circle { fill: #fff0c0; stroke: #aa6600; }
+.tooth-box.rct path, .tooth-box.rct polygon, .tooth-box.rct circle { fill: #d0ffd0; stroke: #006600; }
+.tooth-box.extracted { opacity: 0.5; }
+.tooth-box.extracted path, .tooth-box.extracted polygon, .tooth-box.extracted circle { fill: #ffd0d0; stroke: #cc0000; stroke-dasharray: 2; }
+.tooth-box.missing { opacity: 0.25; }
+.tooth-box.missing path, .tooth-box.missing polygon, .tooth-box.missing circle { fill: #eee; stroke: #888; stroke-dasharray: 3; }
+
+/* Legend */
+.chart-legend { display: flex; flex-wrap: wrap; gap: 6px; font-size: 11px; margin: 6px 0; align-items: center; background: #fdfdfd; padding: 6px; border: 1px dashed #ccc; }
+.legend-item { display: flex; align-items: center; gap: 4px; cursor: pointer; padding: 3px 8px; border-radius: 4px; border: 1px solid #ddd; background: #fff; }
+.legend-item.active-mode { border: 2px solid #8B0000; font-weight: bold; background: #fff5f5; }
+.legend-color { width: 14px; height: 14px; border: 1px solid #aaa; border-radius: 3px; }
+.lc-normal { background: white; }
+.lc-caries { background: #ffe0d0; border-color: #cc3300; }
+.lc-filled { background: #d0e8ff; border-color: #0055aa; }
+.lc-crown { background: #fff0c0; border-color: #aa6600; }
+.lc-rct { background: #d0ffd0; border-color: #006600; }
+.lc-extracted { background: #ffd0d0; border-style: dashed; border-color: #cc0000; }
+.lc-missing { background: #eee; border-style: dotted; border-color: #888; }
+
+/* ===== DIAGNOSIS ===== */
+.diagnosis-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 12px; font-weight: bold; border-bottom: 1px solid #333; padding-bottom: 3px; }
+.diagnosis-input { flex: 1; border: none; outline: none; background: transparent; font-size: 14px; font-family: inherit; padding: 4px 5px; line-height: 1.2; }
+
+/* ===== TREATMENT TABLE ===== */
+.treatment-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 2px; }
+.treatment-table th { border: 1.5px solid #333; padding: 5px 6px; text-align: center; font-size: 11px; background: white; }
+.treatment-table th .ar { font-size: 11px; font-weight: bold; direction: rtl; }
+.treatment-table th .en { font-size: 10px; font-weight: bold; }
+
+.treatment-table td { border: 1.5px solid #333; padding: 0; height: 35px; vertical-align: middle; position: relative; }
+.treatment-table td .row-cell-wrap { display: flex; align-items: center; width: 100%; height: 100%; }
+.treatment-table td input { width: 100%; height: 100%; border: none; outline: none; background: transparent; font-size: 13px; font-weight: bold; font-family: inherit; padding: 0 8px; direction: rtl; text-align: right; line-height: 35px; }
+.treatment-table td input.date-input { text-align: center; direction: ltr; }
+
+.row-num { font-size: 11px; font-weight: bold; color: #333; font-style: italic; padding-left: 6px; padding-right: 2px; white-space: nowrap; display: flex; align-items: center; height: 100%; }
+
+/* Patient switcher panel */
+.patients-panel { width: 210mm; margin: 0 auto 0; background: #f8f4f0; border: 1px solid #ddd; display: none; }
+.patients-panel.open { display: block; }
+.patients-list-inner { padding: 12px 16px; max-height: 250px; overflow-y: auto; }
+.pt-item { padding: 7px 10px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; }
+.pt-item:hover { background: #fdf0f0; }
+.pt-item .pt-name { font-weight: bold; }
+.pt-item .pt-meta { font-size: 11px; color: #888; }
+.pt-item .pt-file { color: #8B0000; font-size: 12px; font-weight: bold; }
+
+/* ===== PRINT ===== */
+@media print {
+  body { background: white; }
+  .toolbar, .chart-legend, #add-row-btn-container, .patients-panel { display: none !important; }
+  .paper { box-shadow: none; margin: 0; width: 100%; padding: 10mm 12mm; }
+  .tooth-svg-container path, .tooth-svg-container polygon, .tooth-svg-container circle { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .info-input, .history-line-input, .diagnosis-input { border-bottom: 1px dotted #555 !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button onclick="handleNewFormBtn()">+ مريض جديد</button>
+    <button onclick="handleTogglePanelBtn()">📋 قائمة المرضى</button>
+    <button onclick="savePatient()" style="background:#ffe0b2;color:#5d2e00;">💾 حفظ الملف</button>
+    
+    <!-- منطقة إرسال الكارت مباشرة لواتساب الدكتور -->
+    <div class="doctor-zone">
+      <button onclick="sendToDoctorWhatsApp()">📲 إرسال الكارت إلى الدكتور</button>
+    </div>
+
+    <button onclick="exportBackup()" style="background:#e8f5e9;color:#1b5e20;">📥 تصدير نسخة احتياطية</button>
+    <button onclick="triggerImport()" style="background:#e3f2fd;color:#0d47a1;">📤 استيراد نسخة احتياطية</button>
+    <input type="file" id="import-file" style="display:none;" accept=".json" onchange="importBackup(this)">
+    <button onclick="window.print()">🖨️ طباعة</button>
+  </div>
+  <span id="toolbar-name">— ملف جديد —</span>
+</div>
+
+<div class="patients-panel" id="patients-panel">
+  <div class="patients-list-inner">
+    <div style="display:flex; gap:15px; align-items:center; margin-bottom:10px; flex-wrap:wrap; background:#fff; padding:8px; border-radius:5px; border:1px solid #e0e0e0;">
+      <div style="display:flex; align-items:center; gap:5px;">
+        <label style="font-size:12px; font-weight:bold;">البحث بالنص:</label>
+        <input id="pt-search" placeholder="بحث بالإسم أو الرقم..." oninput="renderPanel()" style="border:1px solid #ccc;border-radius:4px;padding:5px;font-size:12px;outline:none;width:180px;">
+      </div>
+      <div style="display:flex; align-items:center; gap:5px;">
+        <label style="font-size:12px; font-weight:bold;">تصفية بالتاريخ:</label>
+        <input type="date" id="pt-date-search" onchange="renderPanel()" style="border:1px solid #ccc;border-radius:4px;padding:4px;font-size:12px;outline:none;font-family:inherit;">
+        <button onclick="clearDateFilter()" style="padding:4px 8px; font-size:11px; background:#eee; border:1px solid #ccc; border-radius:4px; cursor:pointer; color:#333;">إلغاء التاريخ</button>
+      </div>
+      <span style="font-size:12px;color:#888;margin-right:auto;font-weight:bold;" id="pt-count"></span>
+    </div>
+    <div id="pt-list"></div>
+  </div>
+</div>
+
+<div class="paper" id="form-paper">
+
+  <div class="page-header">
+    <div>
+      <div class="clinic-name">Dr. Ahmed El Sharif</div>
+      <div class="clinic-sub">
+        Dental Center<br>
+        For Oral &amp; Maxillofacial Surgery<br>
+        Fixed &amp; removable prosthesis,<br>
+        implantation &amp; esthetic Dentistry
+      </div>
+    </div>
+    <div class="logo-circle">
+      <div class="logo-name">DR. AHMED EL SHARIF</div>
+      <div class="logo-tooth">🦷</div>
+      <div class="logo-bottom">DENTAL CENTER</div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;">
+    <span>Name</span>
+    <input class="info-input" id="f-name" style="flex:1;">
+    <span style="direction:rtl;">الإسم</span>
+    <span style="margin-right:10px;">File No.</span>
+    <div style="border:2px solid #333;padding:2px 6px;display:flex;gap:2px;">
+      <input id="f-file" style="border:none;outline:none;width:70px;font-size:13px;font-weight:bold;font-family:inherit;text-align:center;" placeholder="0001">
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;">
+    <span>Age</span>
+    <input class="info-input" id="f-age" style="width:55px;">
+    <span style="direction:rtl;">السن</span>
+    <span style="margin:0 4px;">Tel.</span>
+    <input class="info-input" id="f-tel" style="width:140px;">
+    <span>Gender</span>
+    <input class="info-input" id="f-gender-text" style="width:100px;">
+    <span style="direction:rtl;">النوع</span>
+  </div>
+
+  <div class="history-gender">
+    <div class="history-section">
+      <div style="display:flex;gap:10px;font-size:13px;font-weight:bold;margin-bottom:6px;align-items:center;">
+        <span>Past medical history</span>
+        <span style="direction:rtl;font-size:12px;font-weight:normal;">العمليات والأدوية التي يتناولها المريض ان وجدت</span>
+      </div>
+      <div class="history-line">
+        <span>1-</span>
+        <input class="history-line-input" id="f-hist1">
+      </div>
+      <div class="history-line">
+        <span>2-</span>
+        <input class="history-line-input" id="f-hist2">
+      </div>
+      
+      <div class="diseases-row">
+        <div class="disease-item"><input type="checkbox" id="d-diabetic"><label for="d-diabetic">Diabetic</label></div>
+        <div class="disease-item"><input type="checkbox" id="d-hyper"><label for="d-hyper">Hypertensive</label></div>
+        <div class="disease-item"><input type="checkbox" id="d-cardiac"><label for="d-cardiac">Cardiac</label></div>
+        <div class="disease-item"><input type="checkbox" id="d-renal"><label for="d-renal">Renal</label></div>
+        <div class="disease-item"><input type="checkbox" id="d-hepatic"><label for="d-hepatic">Hepatic</label></div>
+      </div>
+    </div>
+    
+    <div class="gender-box">
+      <div class="gender-row">
+        <label class="gender-row-label">Male:</label>
+        <span>( <input type="checkbox" class="gender-check" id="g-male"> )</span>
+        <span style="direction:rtl;">ذكر</span>
+      </div>
+      <div class="gender-row">
+        <label class="gender-row-label">Female:</label>
+        <span>( <input type="checkbox" class="gender-check" id="g-female"> )</span>
+        <span style="direction:rtl;">أنثى</span>
+      </div>
+      <div class="gender-row">
+        <label class="gender-row-label">Not Married:</label>
+        <span>( <input type="checkbox" class="gender-check" id="g-notmarried"> )</span>
+        <span style="direction:rtl;">غير متزوجة</span>
+      </div>
+      <div class="gender-divider"></div>
+      <div style="font-size:9px;font-weight:bold;direction:rtl;margin-bottom:3px;">متزوجة</div>
+      <div class="gender-row">
+        <label class="gender-row-label">Pregnant:</label>
+        <span>( <input type="checkbox" class="gender-check" id="g-preg"> )</span>
+        <span style="direction:rtl;">يوجد حمل</span>
+      </div>
+      <div class="gender-row">
+        <label class="gender-row-label">Not Preg.:</label>
+        <span>( <input type="checkbox" class="gender-check" id="g-notpreg"> )</span>
+        <span style="direction:rtl;">عدم وجود حمل</span>
+      </div>
+      <div class="gender-row">
+        <label class="gender-row-label">Not Sure:</label>
+        <span>( <input type="checkbox" class="gender-check" id="g-notsure"> )</span>
+        <span style="direction:rtl;">غير متأكدة</span>
+      </div>
+      <div class="gender-row">
+        <label class="gender-row-label">Lactating:</label>
+        <span>( <input type="checkbox" class="gender-check" id="g-lact"> )</span>
+        <span style="direction:rtl;">يوجد رضاعة</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-title">Dental Chart</div>
+
+  <div class="chart-legend">
+    <strong>اختر الحالة ثم اضغط على السن:</strong>
+    <div class="legend-item active-mode" onclick="setMode('normal',this)" id="mode-normal"><div class="legend-color lc-normal"></div> سليم</div>
+    <div class="legend-item" onclick="setMode('caries',this)" id="mode-caries"><div class="legend-color lc-caries"></div> تسوس</div>
+    <div class="legend-item" onclick="setMode('filled',this)" id="mode-filled"><div class="legend-color lc-filled"></div> حشو</div>
+    <div class="legend-item" onclick="setMode('crown',this)" id="mode-crown"><div class="legend-color lc-crown"></div> تاج</div>
+    <div class="legend-item" onclick="setMode('rct',this)" id="mode-rct"><div class="legend-color lc-rct"></div> علاج عصب</div>
+    <div class="legend-item" onclick="setMode('extracted',this)" id="mode-extracted"><div class="legend-color lc-extracted"></div> مخلوع</div>
+    <div class="legend-item" onclick="setMode('missing',this)" id="mode-missing"><div class="legend-color lc-missing"></div> ناقص</div>
+  </div>
+
+  <div class="chart-container">
+    <div style="display:flex;align-items:stretch;">
+      <div style="display:flex;flex-direction:column;justify-content:center;">
+        <div class="jaw-label-side">Upper</div>
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div class="jaw-row">
+          <div class="jaw-row-label">Buccal</div>
+          <div class="tooth-wrap" id="upper-buccal"></div>
+        </div>
+        <div class="jaw-row">
+          <div class="jaw-row-label">Lingual</div>
+          <div class="tooth-wrap" id="upper-lingual"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="border-top:2px solid #555;margin:6px 0;"></div>
+
+    <div style="display:flex;align-items:stretch;">
+      <div style="display:flex;flex-direction:column;justify-content:center;">
+        <div class="jaw-label-side">Lower</div>
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div class="jaw-row" style="margin-bottom:4px;">
+          <div class="jaw-row-label">Lingual</div>
+          <div class="tooth-wrap" id="lower-lingual"></div>
+        </div>
+        <div class="jaw-row">
+          <div class="jaw-row-label">Buccal</div>
+          <div class="tooth-wrap" id="lower-buccal"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="diagnosis-row">
+    <strong>Diagnosis:</strong>
+    <input class="diagnosis-input" id="f-diagnosis">
+  </div>
+
+  <table class="treatment-table">
+    <thead>
+      <tr>
+        <th style="width:22%;"><div class="ar">التاريخ</div><div class="en">Date</div></th>
+        <th style="width:50%;"><div class="ar">خطوات العلاج</div><div class="en">Treatment Procedure</div></th>
+        <th style="width:28%;"><div class="en">Comments</div></th>
+      </tr>
+    </thead>
+    <tbody id="treatment-tbody"></tbody>
+  </table>
+
+</div>
+
+<script>
+// ==========================================
+// 🔴 تم تحديث رقم هاتف الدكتور هنا بنجاح 🔴
+// ==========================================
+const DOCTOR_WHATSAPP_NUMBER = "201014310919"; 
+// ==========================================
+
+let patients = [];
+let currentId = null;
+let toothMode = 'normal';
+let toothStates = {};
+let currentRegDate = '';
+let originalSnapshot = ""; 
+
+const upperNums = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
+const lowerNums = [32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17];
+
+function getTodayString() {
+  const now = new Date();
+  return now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,'0') + "-" + String(now.getDate()).padStart(2,'0');
+}
+
+function getToothSVG(num) {
+  let n = parseInt(num);
+  let isMolar = (n >= 1 && n <= 3) || (n >= 14 && n <= 19) || (n >= 30 && n <= 32);
+  let isPremolar = n == 4 || n == 5 || n == 12 || n == 13 || n == 20 || n == 21 || n == 28 || n == 29;
+  if (isMolar) {
+    return `<svg viewBox="0 0 30 40" width="100%" height="100%"><path d="M6,22 C4,32 7,38 9,38 C11,38 12,32 15,25 C18,32 19,38 21,38 C23,38 26,32 24,22 Z" /><path d="M5,8 C4,18 6,22 15,22 C24,22 26,18 25,8 C24,4 21,5 15,6 C9,5 6,4 5,8 Z" /><path d="M9,10 Q15,13 21,10 M15,6 L15,16" stroke-width="0.8"/></svg>`;
+  } else if (isPremolar) {
+    return `<svg viewBox="0 0 30 40" width="100%" height="100%"><path d="M8,20 C6,30 11,38 15,38 C19,38 24,30 22,20 Z" /><path d="M6,9 C5,17 7,20 15,20 C23,20 25,17 24,9 C22,6 19,7 15,8 C11,7 8,6 6,9 Z" /><circle cx="15" cy="13" r="3" stroke-width="0.8"/></svg>`;
+  } else {
+    return `<svg viewBox="0 0 30 40" width="100%" height="100%"><path d="M9,18 C8,28 12,39 15,39 C18,39 22,28 21,18 Z" /><path d="M7,10 C6,16 8,18 15,18 C22,18 24,16 23,10 C21,6 17,7 15,7 C13,7 9,6 7,10 Z" /></svg>`;
+  }
+}
+
+function loadData(){ try{ patients=JSON.parse(localStorage.getItem('sharif_forms')||'[]'); }catch(e){ patients=[]; } }
+function saveData(){ localStorage.setItem('sharif_forms', JSON.stringify(patients)); }
+
+function genId(){ return Date.now().toString(); }
+function genFile(){
+  const max = patients.reduce((m,p)=>Math.max(m,parseInt(p.fileNo||0)),0);
+  return String(max+1).padStart(4,'0');
+}
+
+function setMode(mode, btn){
+  toothMode = mode;
+  document.querySelectorAll('.legend-item').forEach(b=>b.classList.remove('active-mode'));
+  btn.classList.add('active-mode');
+}
+
+function makeToothBox(key){
+  const numDisplay = key.replace(/^[A-Z]+/,'');
+  const container = document.createElement('div');
+  container.className = 'tooth-box';
+  container.id = 'box-'+key;
+  const state = toothStates[key]||'normal';
+  if(state!=='normal') container.classList.add(state);
+  container.innerHTML = `<div class="tooth-svg-container">${getToothSVG(numDisplay)}</div><span class="t-num">${numDisplay}</span>`;
+  container.onclick = ()=>{
+    const cur = toothStates[key]||'normal';
+    toothStates[key] = (cur===toothMode && toothMode!=='normal') ? 'normal' : toothMode;
+    container.className = 'tooth-box';
+    if(toothStates[key] !== 'normal') container.classList.add(toothStates[key]);
+  };
+  return container;
+}
+
+function buildChart(){
+  ['upper-buccal', 'upper-lingual', 'lower-lingual', 'lower-buccal'].forEach(id=>document.getElementById(id).innerHTML='');
+  upperNums.forEach(n=>{ document.getElementById('upper-buccal').appendChild(makeToothBox('UB'+n)); });
+  upperNums.forEach(n=>{ document.getElementById('upper-lingual').appendChild(makeToothBox('UL'+n)); });
+  lowerNums.forEach(n=>{ document.getElementById('lower-lingual').appendChild(makeToothBox('LL'+n)); });
+  lowerNums.forEach(n=>{ document.getElementById('lower-buccal').appendChild(makeToothBox('LB'+n)); });
+}
+
+let treatRows = [];
+function buildTreatmentTable(){
+  const tbody = document.getElementById('treatment-tbody');
+  if(treatRows.length===0) treatRows = [{date:getTodayString(),proc:'',comments:''}];
+  tbody.innerHTML = treatRows.map((r,i)=>`
+    <tr>
+      <td>
+        <div class="row-cell-wrap">
+          <span class="row-num">${i+1}-</span>
+          <input class="date-input" value="${r.date||''}" oninput="treatRows[${i}].date=this.value" placeholder="— / — / ——">
+        </div>
+      </td>
+      <td><div class="row-cell-wrap"><input value="${r.proc||''}" oninput="treatRows[${i}].proc=this.value"></div></td>
+      <td><div class="row-cell-wrap"><input value="${r.comments||''}" oninput="treatRows[${i}].comments=this.value" style="direction:ltr; text-align:left;"></div></td>
+    </tr>
+  `).join('');
+}
+
+function addTreatRow(){ 
+  treatRows.push({date:getTodayString(),proc:'',comments:''}); 
+  buildTreatmentTable(); 
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const addBtnContainer = document.createElement('div');
+  addBtnContainer.id = 'add-row-btn-container'; addBtnContainer.style='text-align:right;margin-top:6px;';
+  addBtnContainer.innerHTML='<button onclick="addTreatRow()" style="font-size:11px;background:none;border:1px dashed #8B0000;color:#8B0000;padding:4px 12px;cursor:pointer;border-radius:4px;font-family:inherit;">+ إضافة جلسة</button>';
+  document.querySelector('.paper').appendChild(addBtnContainer);
+  loadData();
+  newForm();
+  buildChart();
+  buildTreatmentTable();
+  
+  window.addEventListener('beforeunload', function (e) {
+    if (isFormChanged()) {
+      e.preventDefault();
+      e.returnValue = 'لم تقم بحفظ التعديلات، هل تود الخروج حقاً؟';
+    }
+  });
+});
+
+function collectForm(){
+  const cbs = {};
+  ['g-male','g-female','g-notmarried','g-preg','g-notpreg','g-notsure','g-lact','d-diabetic','d-hyper','d-cardiac','d-renal','d-hepatic'].forEach(id=>{
+    const el = document.getElementById(id); if(el) cbs[id] = el.checked;
+  });
+  return {
+    id: currentId || genId(),
+    name: document.getElementById('f-name').value,
+    fileNo: document.getElementById('f-file').value,
+    age: document.getElementById('f-age').value,
+    tel: document.getElementById('f-tel').value,
+    genderText: document.getElementById('f-gender-text').value,
+    hist1: document.getElementById('f-hist1').value,
+    hist2: document.getElementById('f-hist2').value,
+    diagnosis: document.getElementById('f-diagnosis').value,
+    regDate: currentRegDate || getTodayString(),
+    checkboxes: cbs,
+    toothStates: JSON.parse(JSON.stringify(toothStates)),
+    treatments: JSON.parse(JSON.stringify(treatRows))
+  };
+}
+
+function takeSnapshot() {
+  const currentData = collectForm();
+  currentData.id = "";
+  currentData.fileNo = "";
+  originalSnapshot = JSON.stringify(currentData);
+}
+
+function isFormChanged() {
+  const currentData = collectForm();
+  currentData.id = "";
+  currentData.fileNo = "";
+  if(!document.getElementById('f-name').value.trim() && treatRows.length <= 1 && Object.keys(toothStates).length === 0) {
+     return false;
+  }
+  return JSON.stringify(currentData) !== originalSnapshot;
+}
+
+function checkUnsavedChanges() {
+  if (isFormChanged()) {
+    return confirm("تنبيه: هناك تعديلات لم يتم حفظها على كارت المريض الحالي. هل تريد الانتقال وإلغاء هذه التعديلات؟");
+  }
+  return true;
+}
+
+function fillForm(d){
+  currentId = d.id || null;
+  document.getElementById('f-name').value = d.name||'';
+  document.getElementById('f-file').value = d.fileNo||'';
+  document.getElementById('f-age').value = d.age||'';
+  document.getElementById('f-tel').value = d.tel||'';
+  document.getElementById('f-gender-text').value = d.genderText||'';
+  document.getElementById('f-hist1').value = d.hist1||'';
+  document.getElementById('f-hist2').value = d.hist2||'';
+  document.getElementById('f-diagnosis').value = d.diagnosis||'';
+  currentRegDate = d.regDate || getTodayString();
+  ['g-male','g-female','g-notmarried','g-preg','g-notpreg','g-notsure','g-lact','d-diabetic','d-hyper','d-cardiac','d-renal','d-hepatic'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.checked = d.checkboxes ? !!d.checkboxes[id] : false;
+  });
+  toothStates = JSON.parse(JSON.stringify(d.toothStates||{}));
+  buildChart();
+  treatRows = (d.treatments && d.treatments.length) ? d.treatments : [{date:getTodayString(),proc:'',comments:''}];
+  buildTreatmentTable();
+  document.getElementById('toolbar-name').textContent = d.name ? ('📁 '+d.name+' — #'+d.fileNo) : '— ملف جديد —';
+  
+  takeSnapshot(); 
+}
+
+function newForm(){
+  toothStates = {};
+  treatRows = [{date:getTodayString(),proc:'',comments:''}];
+  fillForm({
+    fileNo: genFile(),
+    regDate: getTodayString()
+  });
+  currentId = null;
+  takeSnapshot();
+}
+
+function handleNewFormBtn() {
+  if (checkUnsavedChanges()) {
+    newForm();
+  }
+}
+
+function handleTogglePanelBtn() {
+  const p = document.getElementById('patients-panel');
+  if (!p.classList.contains('open')) {
+    togglePanel();
+  } else {
+    p.classList.remove('open');
+  }
+}
+
+function savePatient(){
+  const data = collectForm();
+  if(!data.name.trim()){ alert("برجاء إدخال اسم المريض أولاً"); return; }
+  const idx = patients.findIndex(p => p.id === data.id);
+  if(idx > -1) {
+    patients[idx] = data;
+  } else {
+    patients.push(data);
+  }
+  saveData();
+  document.getElementById('toolbar-name').textContent = '📁 ' + data.name + ' — #' + data.fileNo;
+  alert("تم حفظ الملف محلياً بنجاح!");
+  takeSnapshot(); 
+  renderPanel();
+}
+
+function togglePanel(){
+  const p = document.getElementById('patients-panel');
+  p.classList.add('open');
+  renderPanel();
+}
+
+function renderPanel(){
+  const query = document.getElementById('pt-search').value.toLowerCase();
+  const dateQuery = document.getElementById('pt-date-search').value;
+  const listEl = document.getElementById('pt-list');
+  listEl.innerHTML = '';
+  
+  let filtered = patients.filter(p => {
+    const matchText = (p.name||'').toLowerCase().includes(query) || (p.fileNo||'').includes(query) || (p.tel||'').includes(query);
+    const matchDate = dateQuery ? (p.regDate === dateQuery) : true;
+    return matchText && matchDate;
+  });
+
+  document.getElementById('pt-count').textContent = `عدد المرضى: ${filtered.length}`;
+
+  filtered.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'pt-item';
+    item.onclick = () => { 
+      if (checkUnsavedChanges()) {
+        fillForm(p); 
+        document.getElementById('patients-panel').classList.remove('open'); 
+      }
+    };
+    item.innerHTML = `
+      <div>
+        <span class="pt-name">${p.name}</span>
+        <span class="pt-meta">(${p.age||'--'} سنة) — 📞 ${p.tel||'--'} — 📅 ${p.regDate||'--'}</span>
+      </div>
+      <span class="pt-file">#${p.fileNo}</span>
+    `;
+    listEl.appendChild(item);
+  });
+}
+
+function clearDateFilter(){
+  document.getElementById('pt-date-search').value = '';
+  renderPanel();
+}
+
+function sendToDoctorWhatsApp() {
+  const name = document.getElementById('f-name').value;
+  const fileNo = document.getElementById('f-file').value || '0000';
+  if (!name) { alert("برجاء إدخال اسم المريض أولاً!"); return; }
+
+  const paperElement = document.getElementById('form-paper');
+  alert("سيتم الآن تنزيل صورة الكارت وفتح محادثة الدكتور. يرجى لصق أو إرفاق الصورة له مباشرة.");
+
+  html2canvas(paperElement, {
+    scale: 2, 
+    backgroundColor: '#ffffff',
+    useCORS: true
+  }).then(canvas => {
+    const image = canvas.toDataURL("image/png");
+    const link = document.createElement('a');
+    link.download = `Patient_${name.replace(/\s+/g, '_')}_#${fileNo}.png`;
+    link.href = image;
+    link.click();
+
+    const text = encodeURIComponent(`دكتور، مريض جديد بالخارج:\nالاسم: ${name}\nرقم الملف: #${fileNo}`);
+    
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const waUrl = isMobile 
+      ? `https://wa.me/${DOCTOR_WHATSAPP_NUMBER}?text=${text}`
+      : `https://web.whatsapp.com/send?phone=${DOCTOR_WHATSAPP_NUMBER}&text=${text}`;
+    
+    window.open(waUrl, '_blank');
+  });
+}
+
+function exportBackup(){
+  if(patients.length === 0){ alert("لا توجد بيانات لتصديرها!"); return; }
+  const blob = new Blob([JSON.stringify(patients, null, 2)], {type: "application/json"});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `Sharif_Dental_Backup_${getTodayString()}.json`;
+  link.click();
+}
+
+function triggerImport(){ document.getElementById('import-file').click(); }
+
+function importBackup(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const imported = JSON.parse(e.target.result);
+      if(Array.isArray(imported)){
+        if(confirm(`هل أنت متأكد من استيراد ${imported.length} من ملفات المرضى؟`)){
+          imported.forEach(imp => {
+            const idx = patients.findIndex(p => p.id === imp.id || (p.fileNo === imp.fileNo && p.name === imp.name));
+            if(idx > -1) patients[idx] = imp; else patients.push(imp);
+          });
+          saveData();
+          renderPanel();
+          alert("تم استيراد النسخة الاحتياطية بنجاح!");
+        }
+      } else { alert("الملف غير صالح!"); }
+    } catch(err) { alert("حدث خطأ أثناء قراءة الملف!"); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+setTimeout(function(){
+  try{
+    if(document.getElementById('upper-buccal') && document.getElementById('upper-buccal').children.length===0){
+      buildChart();
+    }
+    if(document.getElementById('treatment-tbody') && document.getElementById('treatment-tbody').children.length===0){
+      buildTreatmentTable();
+    }
+  }catch(e){ console.log(e); }
+},500);
+
+</script>
+</body>
+</html>
